@@ -1,0 +1,4 @@
+name: fly
+version: '1.0'
+main: io.omoli822.fly.Fly
+api-version: '1.21'
