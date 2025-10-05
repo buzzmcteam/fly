@@ -9,7 +9,8 @@ class Fly : JavaPlugin() {
     var featureEnabled: Boolean = false
 
     override fun onEnable() {
-        saveDefaultConfig()
+        // Copy default config.yml from JAR if it doesn't exist
+        saveResource("config.yml", false)
 
         // Load config values
         welcomeMessageTemplate = config.getString("settings.message_at_join") ?: "Welcome!"
@@ -18,7 +19,7 @@ class Fly : JavaPlugin() {
         // Register the listener
         server.pluginManager.registerEvents(MyPlayerListener(this), this)
 
-        logger.info("Fly plugin loaded successfully!")
+        logger.info("Fly plugin loaded successfully! Have a nice time, admin or owner")
     }
 
     override fun onDisable() {
