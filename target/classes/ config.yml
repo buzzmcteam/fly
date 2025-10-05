@@ -1,0 +1,4 @@
+settings:
+  message_at_join: "Welcome, ${player.name}, to the server! Have a good time on your server."
+  enable_feature: true
+  # ${player.name} is the plugin grabbing the player name so default setting says Welcome, name, to the server! Have a good time on your server.
