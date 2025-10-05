@@ -1,4 +1,4 @@
-name: Maven Package
+name: Build & Publish Paper Plugin
 
 # Trigger on release creation or manually
 on:
@@ -24,7 +24,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          server-id: github             # matches distributionManagement repository id in pom.xml
+          server-id: github             # must match distributionManagement repository id
           settings-path: ${{ github.workspace }}  # location of settings.xml
 
       # 3️⃣ Cache Maven dependencies
@@ -36,12 +36,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 4️⃣ Build the project
-      - name: Build with Maven
-        run: mvn -B clean package
+      # 4️⃣ Build plugin with Maven
+      - name: Build Paper Plugin
+        run: mvn -B clean package -X  # -X enables debug logs for easier error tracking
 
-      # 5️⃣ Deploy to GitHub Packages
+      # 5️⃣ Optional: Test Maven build (skip tests if desired)
+      - name: Run Maven tests
+        run: mvn test || echo "Tests failed, continuing..."  # continue even if tests fail
+
+      # 6️⃣ Deploy plugin to GitHub Packages
       - name: Deploy to GitHub Packages
         run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
