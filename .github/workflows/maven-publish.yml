@@ -1,24 +1,72 @@
-name: Build & Publish Paper Plugin
+name: Build & Approve Paper Plugin
 
 on:
-  release:
-    types: [created]   # automatic trigger
-  workflow_dispatch:    # allows manual trigger
+  push:
+    paths:
+      - 'pom.xml'
+      - 'plugin.yml'
+  workflow_dispatch: # you can still run manually anytime
 
 jobs:
-  build-and-publish:
+  detect-and-wait:
+    name: 🔍 Detect version updates
     runs-on: ubuntu-latest
+    outputs:
+      can_build: ${{ steps.check.outputs.can_build }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🧩 Read versions
+        id: versions
+        run: |
+          pom_version=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          plugin_version=$(grep -m1 'version:' plugin.yml | sed 's/version: //')
+          echo "pom_version=$pom_version" >> $GITHUB_ENV
+          echo "plugin_version=$plugin_version" >> $GITHUB_ENV
+          echo "pom_version=$pom_version"
+          echo "plugin_version=$plugin_version"
+
+      - name: 🧠 Check version conditions
+        id: check
+        run: |
+          pom_changed=$(git diff --name-only HEAD~1 HEAD | grep -c 'pom.xml' || true)
+          plugin_changed=$(git diff --name-only HEAD~1 HEAD | grep -c 'plugin.yml' || true)
+
+          if [ "$pom_changed" -eq 1 ] && [ "$plugin_changed" -eq 1 ]; then
+            if [ "$pom_version" = "$plugin_version" ]; then
+              echo "✅ Versions match ($pom_version) and both changed."
+              echo "can_build=true" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Version mismatch between pom.xml ($pom_version) and plugin.yml ($plugin_version)"
+              echo "can_build=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ One or both version files were not changed."
+            echo "can_build=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-publish:
+    name: ⚙️ Build & Publish (Requires Approval)
+    runs-on: ubuntu-latest
+    needs: detect-and-wait
+    if: needs.detect-and-wait.outputs.can_build == 'true'
+    environment:
+      name: production
+      # You must set this environment in your repo settings and require manual approval.
+      # Settings ➜ Environments ➜ production ➜ Required reviewers: Oliver (your account)
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # 2️⃣ Set up Java 21
-      - name: Set up Java 21
+      - name: ☕ Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -26,21 +74,11 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      # 3️⃣ Cache Maven dependencies (optional)
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: 🧱 Build with Maven
+        run: mvn -B clean package --file pom.xml
 
-      # 4️⃣ Build plugin (force SNAPSHOT update)
-      - name: Build Paper Plugin
-        run: mvn -B clean package -U -X
-
-      # 5️⃣ Deploy to GitHub Packages
-      - name: Deploy to GitHub Packages
-        run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml -U
+      - name: 🚀 Publish to GitHub Packages
+        run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
