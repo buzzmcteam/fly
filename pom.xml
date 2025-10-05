@@ -85,7 +85,7 @@
         <repository>
             <id>github</id> <!-- matches settings.xml server id -->
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/YOUR_USERNAME/YOUR_REPO</url>
+            <url>https://maven.pkg.github.com/Omoli822/fly</url>
         </repository>
     </distributionManagement>
 
