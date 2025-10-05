@@ -1,84 +1,72 @@
-name: Build & Approve Paper Plugin
+name: Build Plugin (Version-Synced + Manual Approval)
 
 on:
   push:
     paths:
-      - 'pom.xml'
-      - 'plugin.yml'
-  workflow_dispatch: # you can still run manually anytime
+      - "pom.xml"
+      - "src/main/resources/plugin.yml"
 
 jobs:
-  detect-and-wait:
-    name: 🔍 Detect version updates
+  check-version-sync:
     runs-on: ubuntu-latest
     outputs:
-      can_build: ${{ steps.check.outputs.can_build }}
-
+      version_changed: ${{ steps.check.outputs.version_changed }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: 🧩 Read versions
-        id: versions
+      - name: Get version from pom.xml
+        id: pom
         run: |
-          pom_version=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
-          plugin_version=$(grep -m1 'version:' plugin.yml | sed 's/version: //')
-          echo "pom_version=$pom_version" >> $GITHUB_ENV
-          echo "plugin_version=$plugin_version" >> $GITHUB_ENV
-          echo "pom_version=$pom_version"
-          echo "plugin_version=$plugin_version"
+          echo "pom_version=$(grep -m1 '<version>' pom.xml | sed -E 's/.*<version>(.*)<\/version>.*/\1/')" >> $GITHUB_OUTPUT
 
-      - name: 🧠 Check version conditions
+      - name: Get version from plugin.yml
+        id: plugin
+        run: |
+          echo "plugin_version=$(grep '^version:' src/main/resources/plugin.yml | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
         id: check
         run: |
-          pom_changed=$(git diff --name-only HEAD~1 HEAD | grep -c 'pom.xml' || true)
-          plugin_changed=$(git diff --name-only HEAD~1 HEAD | grep -c 'plugin.yml' || true)
-
-          if [ "$pom_changed" -eq 1 ] && [ "$plugin_changed" -eq 1 ]; then
-            if [ "$pom_version" = "$plugin_version" ]; then
-              echo "✅ Versions match ($pom_version) and both changed."
-              echo "can_build=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ Version mismatch between pom.xml ($pom_version) and plugin.yml ($plugin_version)"
-              echo "can_build=false" >> $GITHUB_OUTPUT
-            fi
+          if [ "${{ steps.pom.outputs.pom_version }}" = "${{ steps.plugin.outputs.plugin_version }}" ]; then
+            echo "✅ Versions match!"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ One or both version files were not changed."
-            echo "can_build=false" >> $GITHUB_OUTPUT
+            echo "❌ Versions differ or not updated in both files."
+            echo "version_changed=false" >> $GITHUB_OUTPUT
           fi
 
-  build-and-publish:
-    name: ⚙️ Build & Publish (Requires Approval)
+  manual-approval:
+    needs: check-version-sync
+    if: ${{ needs.check-version-sync.outputs.version_changed == 'true' }}
     runs-on: ubuntu-latest
-    needs: detect-and-wait
-    if: needs.detect-and-wait.outputs.can_build == 'true'
     environment:
-      name: production
-      # You must set this environment in your repo settings and require manual approval.
-      # Settings ➜ Environments ➜ production ➜ Required reviewers: Oliver (your account)
-    permissions:
-      contents: write
-      packages: write
-
+      name: approval
+      # Requires manual approval from you via GitHub UI
+      url: https://github.com/${{ github.repository }}/actions
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Wait for approval
+        run: echo "🟡 Awaiting manual approval..."
 
-      - name: ☕ Set up JDK 21
+  build:
+    needs: manual-approval
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-version-sync.outputs.version_changed == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          server-id: github
-          settings-path: ${{ github.workspace }}
+          java-version: 17
+          distribution: temurin
 
-      - name: 🧱 Build with Maven
-        run: mvn -B clean package --file pom.xml
+      - name: Build with Maven
+        run: mvn clean package -B
 
-      - name: 🚀 Publish to GitHub Packages
-        run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-jar
+          path: target/*.jar
