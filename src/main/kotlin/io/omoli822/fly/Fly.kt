@@ -2,7 +2,7 @@ package io.omoli822.fly
 import io.omoli822.fly.commands.AdminConfigCommand
 import io.omoli822.fly.listeners.MyPlayerListener
 import org.bukkit.plugin.java.JavaPlugin
-
+import io.omoli822.fly.commands.ReloadConfig
 class Fly : JavaPlugin() {
 
     lateinit var welcomeMessageTemplate: String
@@ -24,9 +24,11 @@ class Fly : JavaPlugin() {
     }
     private fun registerCommands() {
         getCommand("setjoinmessage")?.setExecutor(AdminConfigCommand(this))
+        getCommand("flyreloadconfig")?.setExecutor(ReloadConfig(this))
         logger.info("commands loaded")
         logger.info("Fly plugin loaded successfully! Have a nice time, admin or owner")
     }
+    // getCommand("flyreloadconfig") is how i write it
 
 
 
