@@ -13,6 +13,7 @@ class Fly : JavaPlugin() {
     override fun onEnable() {
         // Save default config.yml if it doesn't exist
         saveResource("config.yml", false)
+        saveDefaultConfig()
         logger.info("Fly plugin enabled")
 
         // Load config values
@@ -28,9 +29,13 @@ class Fly : JavaPlugin() {
 
     private fun registerCommands() {
         getCommand("setjoinmessage")?.setExecutor(AdminConfigCommand(this))
-        getCommand("flyreloadconfig")?.setExecutor(ReloadConfig(this))
+        getCommand("ReloadConfig")?.setExecutor(ReloadConfig(this))
         logger.info("Commands loaded successfully!")
     }
+// commands /flyreloadconfig reloads the fly config
+// commands /setjoinmessage <message> sets fly join message
+
+
 
     override fun onDisable() {
         logger.info("Fly plugin unloaded successfully!")

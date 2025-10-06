@@ -3,7 +3,9 @@ package io.omoli822.fly.commands
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
+
 
 class ReloadConfig(private val plugin: JavaPlugin) : CommandExecutor {
 
@@ -20,7 +22,9 @@ class ReloadConfig(private val plugin: JavaPlugin) : CommandExecutor {
         }
 
         // Reload the plugin config
-        plugin.reloadConfig()
+        plugin.reloadConfig() // Reloads the config.yml
+
+
         sender.sendMessage("§aFly plugin config reloaded successfully!")
 
         return true
