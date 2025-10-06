@@ -1,37 +1,36 @@
 package io.omoli822.fly
+
 import io.omoli822.fly.commands.AdminConfigCommand
+import io.omoli822.fly.commands.ReloadConfig
 import io.omoli822.fly.listeners.MyPlayerListener
 import org.bukkit.plugin.java.JavaPlugin
-import io.omoli822.fly.commands.ReloadConfig
+
 class Fly : JavaPlugin() {
 
     lateinit var welcomeMessageTemplate: String
     var featureEnabled: Boolean = false
 
     override fun onEnable() {
-        // Copy default config.yml from JAR if it doesn't exist
+        // Save default config.yml if it doesn't exist
         saveResource("config.yml", false)
         logger.info("Fly plugin enabled")
 
-        registerCommands()
         // Load config values
         welcomeMessageTemplate = config.getString("settings.message_at_join") ?: "Welcome!"
         featureEnabled = config.getBoolean("settings.enable_feature")
 
-        // Register the listener
-        server.pluginManager.registerEvents(MyPlayerListener(this), this)
+        // Register commands
+        registerCommands()
 
+        // Register listeners
+        server.pluginManager.registerEvents(MyPlayerListener(this), this)
     }
+
     private fun registerCommands() {
         getCommand("setjoinmessage")?.setExecutor(AdminConfigCommand(this))
         getCommand("flyreloadconfig")?.setExecutor(ReloadConfig(this))
-        logger.info("commands loaded")
-        logger.info("Fly plugin loaded successfully! Have a nice time, admin or owner")
+        logger.info("Commands loaded successfully!")
     }
-    // getCommand("flyreloadconfig") is how i write it
-
-
-
 
     override fun onDisable() {
         logger.info("Fly plugin unloaded successfully!")
