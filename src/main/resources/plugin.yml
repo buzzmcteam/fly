@@ -1,4 +1,9 @@
 name: fly
-version: '3.0.0'
+version: '3.0.1'
 main: io.omoli822.fly.Fly
 api-version: '1.21'
+commands:
+  setjoinmessage:
+    description: allows you to set the join message remember ${player.name} is the plugin grabbing the player name so default setting says Welcome, name, to the server! Have a good time on your server.
+    usage: /setjoinmessage <message>
+    permission: fly.admin
