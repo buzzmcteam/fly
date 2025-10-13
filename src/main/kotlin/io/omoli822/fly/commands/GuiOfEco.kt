@@ -39,12 +39,21 @@ class GuiOfEco(private val plugin: Fly, private val economy: Economy) : CommandE
     private val inventories = mutableMapOf<Player, Inventory>()
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        // 1. CHECK IF SENDER IS A PLAYER (MUST BE FIRST)
         if (sender !is Player) {
             sender.sendMessage("Only players can open this GUI!")
             return true
         }
 
         val player = sender
+
+        // 2. CHECK PERMISSION (Now that we know 'player' is valid)
+        if (!player.hasPermission("fly.ecoadmin"))  {
+            player.sendMessage("${ChatColor.RED}You do not have permission to use the Eco Admin GUI.")
+            return true
+        }
+
+        // --- GUI OPENING LOGIC ---
         val inv = Bukkit.createInventory(null, INVENTORY_SIZE, guiTitle)
 
         updateInventory(player, inv)
@@ -99,7 +108,7 @@ class GuiOfEco(private val plugin: Fly, private val economy: Economy) : CommandE
         inv.setItem(0, flyStatusItem)
 
         // Gamemode (Slot 8)
-        val gameModeName = player.gameMode.name.replace("_", " ").lowercase().capitalize() // FIX: Use lowercase()
+        val gameModeName = player.gameMode.name.replace("_", " ").lowercase().capitalize() // Using lowercase() and capitalize()
         val gamemodeItem = createGuiItem(
             Material.COMPASS,
             "${ChatColor.LIGHT_PURPLE}Gamemode",
@@ -135,7 +144,6 @@ class GuiOfEco(private val plugin: Fly, private val economy: Economy) : CommandE
         banMeta.setDisplayName("${ChatColor.RED}${ChatColor.BOLD}Ban Status")
 
         // FIX: Explicitly cast the BanList to a generic type that accepts UUID/OfflinePlayer
-        // This resolves the 'Cannot infer type' and 'isBanned' reference errors.
         @Suppress("UNCHECKED_CAST")
         val banList = plugin.server.getBanList(BanList.Type.PROFILE) as BanList<UUID>
         val isBanned = banList.isBanned(player.uniqueId)

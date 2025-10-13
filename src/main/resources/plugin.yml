@@ -12,3 +12,8 @@ ReloadConfig:
   description: Reloads the Fly plugin config
   usage: /flyreloadconfig
   permission: fly.reload
+
+GuiOfeco:
+  permission: fly.ecoadmin
+  usage: /admintools
+  description: acsses admin GUI
