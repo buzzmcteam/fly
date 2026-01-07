@@ -2,7 +2,7 @@ package io.omoli822.fly
 
 import io.omoli822.fly.commands.AdminConfigCommand
 import io.omoli822.fly.commands.ReloadConfig
-import io.omoli822.fly.commands.GuiOfEco // <-- NEW IMPORT
+import io.omoli822.fly.commands.GuiOfEco
 import io.omoli822.fly.listeners.MyPlayerListener
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.plugin.RegisteredServiceProvider
