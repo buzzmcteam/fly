@@ -7,6 +7,7 @@ import io.omoli822.fly.listeners.MyPlayerListener
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.plugin.RegisteredServiceProvider
 import org.bukkit.plugin.java.JavaPlugin
+import org.mineacademy.fo.plugin.SimplePlugin;
 
 class Fly : JavaPlugin() {
 
