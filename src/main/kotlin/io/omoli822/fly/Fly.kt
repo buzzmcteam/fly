@@ -46,14 +46,13 @@ class Fly : JavaPlugin() {
     }
 
     private fun registerCommands() {
-        // Existing commands
-        getCommand("setjoinmessage")?.setExecutor(AdminConfigCommand(this))
-        getCommand("flyreloadconfig")?.setExecutor(ReloadConfig(this))
-
-        // --- NEW COMMAND REGISTRATION ---
-        val ecoGuiExecutor = GuiOfEco(this, economy!!) // The GuiOfEco class requires the plugin and the non-null Economy
-        getCommand("admintools")?.setExecutor(ecoGuiExecutor) // Register a command like /admintools
-        // --------------------------------
+		// try to register the commands and if it fails print a message and catch the error.
+		try {
+			Registering.registerCommandsStartup();
+		} catch (Exception e) {
+			System.out.println("Oh no! There was a error while registering the commands!");
+			e.printStackTrace();
+		}
 
         logger.info("⚙️ Commands loaded successfully!")
     }
@@ -71,7 +70,6 @@ class Fly : JavaPlugin() {
         // and reuse the 'ecoGuiExecutor' variable. Let's do that for maximum efficiency.
 
         // Re-using the instance from registerCommands for efficiency:
-        val ecoGuiInstance = getCommand("admintools")?.executor as? GuiOfEco
         if (ecoGuiInstance != null) {
             server.pluginManager.registerEvents(ecoGuiInstance, this)
             logger.info("⚡ GuiOfEco listener registered.")
