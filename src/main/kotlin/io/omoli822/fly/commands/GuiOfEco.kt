@@ -144,9 +144,9 @@ class GuiOfEco(private val plugin: Fly, private val economy: Economy) : CommandE
         banMeta.setDisplayName("${ChatColor.RED}${ChatColor.BOLD}Ban Status")
 
         // FIX: Explicitly cast the BanList to a generic type that accepts UUID/OfflinePlayer
-        @Suppress("UNCHECKED_CAST")
-        val banList = plugin.server.getBanList(BanList.Type.PROFILE) as BanList<UUID>
-        val isBanned = banList.isBanned(player.uniqueId)
+        val banList = plugin.server.getBanList(BanList.Type.NAME)
+        val isBanned = banList.isBanned(player.name)
+
 
         banMeta.lore = listOf(if (isBanned) "${ChatColor.RED}BANNED" else "${ChatColor.GREEN}Not Banned")
         banItem.itemMeta = banMeta

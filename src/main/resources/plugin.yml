@@ -1,19 +1,20 @@
-name: fly
-version: '3.1.0'
+name: Fly
+version: 3.1.0
 main: io.omoli822.fly.Fly
-api-version: '1.21'
+api-version: 1.21
+
 commands:
   setjoinmessage:
-    description: allows you to set the join message remember ${player.name} is the plugin grabbing the player name so default setting says Welcome, name, to the server! Have a good time on your server.
+    description: "Allows you to set the join message. Use ${player.name} to insert the player name."
     usage: /setjoinmessage <message>
     permission: fly.admin
 
-ReloadConfig:
-  description: Reloads the Fly plugin config
-  usage: /flyreloadconfig
-  permission: fly.reload
+  flyreload:
+    description: Reloads the Fly plugin config
+    usage: /flyreload
+    permission: fly.reload
 
-  GuiOfeco:
-    permission: fly.ecoadmin
+  flyeco:
+    description: Access the admin economy GUI
     usage: /admintools
-    description: acsses admin GUI
+    permission: fly.ecoadmin
