@@ -7,7 +7,6 @@ import io.omoli822.fly.listeners.MyPlayerListener
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.plugin.RegisteredServiceProvider
 import org.bukkit.plugin.java.JavaPlugin
-import org.mineacademy.fo.plugin.SimplePlugin;
 
 class Fly : JavaPlugin() {
 
@@ -18,9 +17,11 @@ class Fly : JavaPlugin() {
     lateinit var welcomeMessageTemplate: String
     var featureEnabled: Boolean = false
 
+    // Keep a single instance of GuiOfEco so we can both set it as a command executor and register it as a listener
+    private var ecoGuiInstance: GuiOfEco? = null
+
     override fun onEnable() {
         // Save default config if not existing
-        saveResource("config.yml", false)
         saveDefaultConfig()
 
         logger.info("🪶 Fly plugin enabled!")
@@ -42,17 +43,22 @@ class Fly : JavaPlugin() {
         registerCommands()
 
         // Register event listeners (including the GuiOfEco listener)
-        registerListeners() // <-- Use a separate method for clarity
+        registerListeners()
     }
 
     private fun registerCommands() {
-		// try to register the commands and if it fails print a message and catch the error.
-		try {
-			Registering.registerCommandsStartup();
-		} catch (Exception e) {
-			System.out.println("Oh no! There was a error while registering the commands!");
-			e.printStackTrace();
-		}
+        try {
+            // Create one instance of GuiOfEco and use it for both the command executor and listener registration.
+            ecoGuiInstance = GuiOfEco(this, economy!!)
+
+            // Ensure these command names exist in plugin.yml
+            getCommand("ecoadmin")?.setExecutor(ecoGuiInstance)
+            getCommand("adminconfig")?.setExecutor(AdminConfigCommand(this))
+            getCommand("reloadconfig")?.setExecutor(ReloadConfig(this))
+        } catch (e: Exception) {
+            logger.severe("Oh no! There was an error while registering the commands: ${e.message}")
+            e.printStackTrace()
+        }
 
         logger.info("⚙️ Commands loaded successfully!")
     }
@@ -61,29 +67,19 @@ class Fly : JavaPlugin() {
         // Existing listener
         server.pluginManager.registerEvents(MyPlayerListener(this), this)
 
-        // --- NEW LISTENER REGISTRATION ---
-        // GuiOfEco must also be registered as a listener for its InventoryClickEvents to fire
-        val ecoGuiListener = GuiOfEco(this, economy!!)
-        // Note: We should ideally pass the same *instance* used for the command registration,
-        // but since it only holds configuration/state and not user data, re-instantiation here is technically fine.
-        // A better approach is often to handle listener registration inside the registerCommands block
-        // and reuse the 'ecoGuiExecutor' variable. Let's do that for maximum efficiency.
-
-        // Re-using the instance from registerCommands for efficiency:
-        if (ecoGuiInstance != null) {
-            server.pluginManager.registerEvents(ecoGuiInstance, this)
+        // Register the GuiOfEco instance (if created)
+        ecoGuiInstance?.let {
+            server.pluginManager.registerEvents(it, this)
             logger.info("⚡ GuiOfEco listener registered.")
-        } else {
+        } ?: run {
             logger.warning("⚠️ Could not retrieve GuiOfEco command executor for listener registration. Inventory events may fail.")
         }
     }
 
     private fun setupEconomy(): Boolean {
         val vault = server.pluginManager.getPlugin("Vault") ?: return false
-        val rsp: RegisteredServiceProvider<Economy> =
-            server.servicesManager.getRegistration(Economy::class.java) ?: return false
+        val rsp = server.servicesManager.getRegistration(Economy::class.java) ?: return false
 
-        // Check if a logging call is reachable. This logger.info was unreachable in your original code.
         logger.info("Vault found. Attempting to hook economy provider.")
 
         economy = rsp.provider
@@ -95,4 +91,4 @@ class Fly : JavaPlugin() {
     override fun onDisable() {
         logger.info("🪶 Fly plugin unloaded successfully!")
     }
-}
+} 
